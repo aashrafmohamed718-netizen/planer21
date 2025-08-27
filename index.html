@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>21-Day Bootcamp Planner</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React + ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-sky-100 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+
+    const { useState, useEffect, useMemo } = React;
+    const LS_KEY = "bootcamp21.progress.v1";
+    const todayISO = () => new Date().toISOString().slice(0, 10);
+    const START_DATE_ISO = todayISO();
+
+    function addDays(iso, days) {
+      const d = new Date(iso);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    const routineBlocks = [
+      { id: "fajr_exercise", label: "Fajr prayer + 1h exercise" },
+      { id: "breakfast_plan", label: "Breakfast, personal time + daily plan review" },
+      { id: "morning_block", label: "Morning study (4×50/10 Pomodoros)" },
+      { id: "lunch_dhuhr", label: "Lunch + Dhuhr prayer" },
+      { id: "afternoon_block", label: "Afternoon study (3×50/10 Pomodoros)" },
+      { id: "asr_break", label: "Asr prayer + short break" },
+      { id: "late_afternoon_block", label: "Late afternoon study (2×50/10 Pomodoros)" },
+      { id: "dinner_maghrib", label: "Dinner + Maghrib prayer" },
+      { id: "evening_consolidation", label: "Evening consolidation (Feynman technique)" },
+      { id: "isha_winddown", label: "Isha prayer + wind down" },
+      { id: "plan_tomorrow", label: "Plan for tomorrow + tidy workspace" },
+      { id: "sleep", label: "Sleep (8h)" },
+    ];
+
+    const curriculum = [
+      { day: 1, focus: "GPMC C1: Foundations", study: ["Modules 1–2: What is PM?", "Modules 3–4: Lifecycle & culture", "Feynman: Agile vs Waterfall"], milestones: [] },
+      { day: 2, focus: "GPMC C1 → C2", study: ["Finalize C1 assignments", "C2 M1: Initiation", "Feynman: SMART goal"], milestones: ["Course 1 complete 🎉"] },
+      { day: 3, focus: "GPMC C2 → C3", study: ["C2 M3: Stakeholder analysis & RACI", "C3 M1: WBS planning"], milestones: ["Course 2 complete 🎉"] },
+      { day: 4, focus: "GPMC C3: Planning", study: ["C3 M2: Project plan", "C3 M3: Budgeting", "Feynman: Cost estimation"], milestones: [] },
+      { day: 5, focus: "GPMC C3 → C4", study: ["C3 M4: Risk register", "C4 M1: Tracking progress"], milestones: ["Course 3 complete 🎉"] },
+      { day: 6, focus: "GPMC C4: Execution", study: ["C4 M2: Data-driven decisions", "C4 M3: Team dynamics", "Feynman: Team development stages"], milestones: [] },
+      { day: 7, focus: "GPMC C4 + Review", study: ["C4 M4: Closure", "Review C1–C4", "Consolidate notes"], milestones: ["Course 4 complete 🎉", "Week 1 complete 🏁"] },
+      { day: 8, focus: "GPMC C5: Agile", study: ["C5 M1: Agile values", "C5 M2: Scrum roles", "Feynman: Scrum Master vs PO"], milestones: [] },
+      { day: 9, focus: "GPMC C5: Agile", study: ["C5 M3: Scrum events", "C5 M4: Coaching (write story)"], milestones: ["Course 5 complete 🎉"] },
+      { day: 10, focus: "GPMC C7 + Review", study: ["C7: AI job search", "Review all C1–C5, C7"], milestones: ["Phase 1 complete ✅"] },
+      { day: 11, focus: "Tier 3 Tools", study: ["Slack basics", "MS Teams basics", "Google Workspace"], milestones: ["Tier 3 learned ✅"] },
+      { day: 12, focus: "Tier 2 Tools", study: ["Trello board", "ClickUp basics"], milestones: ["Tier 2 learned ✅"] },
+      { day: 13, focus: "Asana (1/2)", study: ["Asana basics", "Mock project", "Feynman: Asana hierarchy"], milestones: [] },
+      { day: 14, focus: "Asana (2/2) + Review", study: ["Advanced Asana", "Review all 7 tools"], milestones: ["Asana proficiency ⭐", "Week 2 complete 🏁"] },
+      { day: 15, focus: "Jira (1/2)", study: ["Scrum project setup", "Backlog & sprint"], milestones: [] },
+      { day: 16, focus: "Jira (2/2)", study: ["Kanban project", "Dashboards"], milestones: ["Jira proficiency ⭐"] },
+      { day: 17, focus: "Capstone Start", study: ["Read brief", "Charter & stakeholder analysis"], milestones: [] },
+      { day: 18, focus: "Capstone", study: ["Project plan", "Risk & comms"], milestones: [] },
+      { day: 19, focus: "Capstone", study: ["Execution & closing docs"], milestones: [] },
+      { day: 20, focus: "Capstone Submission", study: ["Final review", "Submit project"], milestones: ["Capstone complete 🎉"] },
+      { day: 21, focus: "Final Review", study: ["Review all", "Update resume", "Portfolio prep"], milestones: ["Bootcamp complete 🏆"] },
+    ];
+
+    const buildDays = (startISO) =>
+      curriculum.map((c) => {
+        const date = addDays(startISO, c.day - 1);
+        const tasks = [
+          ...routineBlocks.map((r) => ({ id: r.id, label: r.label, type: "routine" })),
+          ...c.study.map((s, idx) => ({ id: `study_${c.day}_${idx}`, label: s, type: "study" })),
+          ...c.milestones.map((m, idx) => ({ id: `milestone_${c.day}_${idx}`, label: m, type: "milestone" })),
+        ];
+        return { ...c, date, tasks };
+      });
+
+    function App() {
+      const [startDate, setStartDate] = useState(START_DATE_ISO);
+      const days = useMemo(() => buildDays(startDate), [startDate]);
+      const [checked, setChecked] = useState(() => {
+        try {
+          return JSON.parse(localStorage.getItem(LS_KEY)) || {};
+        } catch {
+          return {};
+        }
+      });
+      useEffect(() => {
+        localStorage.setItem(LS_KEY, JSON.stringify(checked));
+      }, [checked]);
+
+      const toggle = (dayIdx, taskId) => {
+        setChecked((prev) => ({
+          ...prev,
+          [dayIdx]: { ...prev[dayIdx], [taskId]: !prev[dayIdx]?.[taskId] },
+        }));
+      };
+
+      const totalTasks = days.reduce((s, d) => s + d.tasks.length, 0);
+      const doneTasks = Object.values(checked).flatMap((d) => Object.values(d)).filter(Boolean).length;
+      const progress = Math.round((doneTasks / totalTasks) * 100);
+
+      return (
+        <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
+          <h1 className="text-2xl font-bold text-indigo-700 mb-4">21-Day Bootcamp Planner</h1>
+          <p className="text-slate-600 mb-4">Progress: {doneTasks}/{totalTasks} tasks ({progress}%)</p>
+          <div className="w-full bg-gray-200 rounded-full h-4 mb-6">
+            <div className="bg-green-500 h-4 rounded-full transition-all" style={{ width: progress + "%" }}></div>
+          </div>
+
+          {days.map((d, i) => (
+            <div key={i} className="mb-6">
+              <h2 className="font-semibold text-indigo-600 mb-2">Day {d.day}: {d.focus} <span className="text-sm text-gray-500">({d.date})</span></h2>
+              <ul className="space-y-2">
+                {d.tasks.map((t) => (
+                  <li key={t.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={checked[i]?.[t.id] || false}
+                      onChange={() => toggle(i, t.id)}
+                      className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-400"
+                    />
+                    <span className={"ml-3 " + (checked[i]?.[t.id] ? "line-through text-gray-400" : "text-gray-800")}>
+                      {t.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
